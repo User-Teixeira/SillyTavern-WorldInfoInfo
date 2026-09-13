@@ -1,15 +1,25 @@
 .stwii--trigger {
-    position: absolute;
+    position: fixed;
     bottom: 0.125em;
     left: 0.25em;
-    font-size: 2em;
-    opacity: 0.25;
-    transition: opacity 200ms;
+    width: var(--bottomFormBlockSize);
+    height: var(--bottomFormBlockSize);
+    margin: 0;
+    border: none;
+    font-size: var(--bottomFormIconSize);
+    opacity: 0.7;
+    transition: opacity var(--animation-duration-2x);
     cursor: pointer;
     z-index: 3010;
-    filter: drop-shadow(2px 4px 6px black);
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     anchor-name: --stac--wiAnchor;
+
+    &:hover {
+        opacity: 1;
+        filter: brightness(1.2);
+    }
 
     &:not([data-stwii--badge-count="0"]) {
         &:hover::after { opacity: 1; }

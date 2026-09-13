@@ -3,12 +3,11 @@
 Forked from the amazing LenAnderson. Original at https://github.com/LenAnderson/SillyTavern-WorldInfoInfo; this version adds the following features:
 
 
-Click the book in the lower left corner of the screen to see the list of active entries. 
+Click the book beside the Quick Replies bar to see the list of active entries.
 
 ![list of entries](https://github.com/aikohanasaki/imagehost/blob/main/wii-list.png)
 
-The floating book icon can be dragged to a different location (right-click to enable dragging). To reset its position, use `/wi-position-reset`.
-![drag-to-move](https://github.com/aikohanasaki/imagehost/blob/main/wii-dragtomove.png)
+The book icon stays aligned to the left side of the Quick Replies bar. Click anywhere outside its panel to close it.
 
 🆕 `/wi-report` shows you what keywords triggered which entry during which round of recursion.
 

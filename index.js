@@ -14,20 +14,6 @@ STWII.MAX_ACTIVATION_EVENTS = STWII.MAX_ACTIVATION_EVENTS ?? 1000;
 STWII.MAX_BUILDS = STWII.MAX_BUILDS ?? 5;
 STWII.MAX_BUILD_LOGS = STWII.MAX_BUILD_LOGS ?? 2000;
 
-function resetWiTriggerPosition(triggerEl = window.STWII?.trigger) {
-    if (!extension_settings.worldInfoInfo) extension_settings.worldInfoInfo = {};
-    delete extension_settings.worldInfoInfo.triggerPos;
-    // Clear inline overrides -> back to CSS default (bottom-left)
-    if (triggerEl) {
-        triggerEl.style.left = '';
-        triggerEl.style.top = '';
-        triggerEl.style.right = '';
-        triggerEl.style.bottom = '';
-    }
-    saveSettingsDebounced();
-}
-STWII.resetWiTriggerPosition = resetWiTriggerPosition;
-
 function pushBounded(arr, item, max) {
     try {
         arr.push(item);
@@ -82,11 +68,13 @@ const init = ()=>{
         trigger.classList.add('fa-solid', 'fa-fw', 'fa-book-atlas');
         trigger.title = 'Active WI\n---\nright click for options';
         trigger.addEventListener('click', ()=>{
+            configPanel.classList.remove('stwii--isActive');
             panel.classList.toggle('stwii--isActive');
             requestAnimationFrame(ensurePanelsVisible);
         });
         trigger.addEventListener('contextmenu', (evt)=>{
             evt.preventDefault();
+            panel.classList.remove('stwii--isActive');
             configPanel.classList.toggle('stwii--isActive');
             requestAnimationFrame(ensurePanelsVisible);
         });
@@ -165,65 +153,62 @@ const init = ()=>{
             }
             configPanel.append(mesRow);
         }
-        // Drag-to-move toggle
-        const dragRow = document.createElement('label'); {
-            dragRow.classList.add('stwii--configRow');
-            dragRow.title = 'Allow dragging the book icon to reposition it';
-            const cb = document.createElement('input'); {
-                cb.type = 'checkbox';
-                cb.checked = extension_settings.worldInfoInfo?.drag ?? false;
-                cb.addEventListener('click', ()=>{
-                    if (!extension_settings.worldInfoInfo) extension_settings.worldInfoInfo = {};
-                    const wasEnabled = !!extension_settings.worldInfoInfo.drag;
-                    extension_settings.worldInfoInfo.drag = cb.checked;
-
-                    // If enabling for the first time and no saved position, convert current visual spot
-                    const hasSaved = !!extension_settings.worldInfoInfo.triggerPos;
-                    if (cb.checked && !wasEnabled && !hasSaved) {
-                        materializeDefaultPosition();
-                    }
-                    saveSettingsDebounced();
-                });
-                dragRow.append(cb);
-            }
-            const lbl = document.createElement('div'); {
-                lbl.textContent = 'Enable drag to move';
-                dragRow.append(lbl);
-            }
-            configPanel.append(dragRow);
-        }
-        // Reset position row
-        const resetRow = document.createElement('div'); {
-            resetRow.classList.add('stwii--configRow');
-            resetRow.title = 'Reset the book icon position to default';
-            resetRow.style.userSelect = 'none';
-            const resetLbl = document.createElement('div'); {
-                resetLbl.textContent = 'Reset position';
-                resetRow.append(resetLbl);
-            }
-            resetRow.addEventListener('click', ()=>{
-                resetWiTriggerPosition(trigger);
-            });
-            configPanel.append(resetRow);
-        }
         document.body.append(configPanel);
         STWII.trigger = trigger; STWII.panel = panel; STWII.configPanel = configPanel;
     }
 
-    // Apply saved position if present
-    {
-        const savedPos = extension_settings.worldInfoInfo?.triggerPos;
-        if (savedPos && Number.isFinite(savedPos.left) && Number.isFinite(savedPos.top)) {
-            trigger.style.left = savedPos.left + 'px';
-            trigger.style.top = savedPos.top + 'px';
-            trigger.style.right = 'auto';
-            trigger.style.bottom = 'auto';
-        }
-    }
+    // Close either panel when clicking anywhere outside the trigger and panels.
+    document.addEventListener('pointerdown', (evt) => {
+        const target = evt.target;
+        if (!(target instanceof Node)) return;
+        if (trigger.contains(target) || panel.contains(target) || configPanel.contains(target)) return;
+        panel.classList.remove('stwii--isActive');
+        configPanel.classList.remove('stwii--isActive');
+    });
 
-    // Drag-to-move handlers and helpers
+    // Positioning helpers
     function clamp(val, min, max) {
         return Math.max(min, Math.min(max, val));
+    }
+
+    // Keep the trigger immediately to the left of the Quick Replies bar.
+    function positionTriggerBesideQuickReplies() {
+        const qrBar = document.querySelector('#qr--bar');
+        if (!qrBar) return false;
+
+        const qrRect = qrBar.getBoundingClientRect();
+        if (qrRect.width === 0 && qrRect.height === 0) return false;
+
+        const gap = 4;
+        const left = clamp(qrRect.left - trigger.offsetWidth - gap, 0, window.innerWidth - trigger.offsetWidth);
+        const top = clamp(qrRect.top + ((qrRect.height - trigger.offsetHeight) / 2), 0, window.innerHeight - trigger.offsetHeight);
+
+        trigger.style.left = left + 'px';
+        trigger.style.top = top + 'px';
+        trigger.style.right = 'auto';
+        trigger.style.bottom = 'auto';
+        return true;
+    }
+
+    let qrBarResizeObserver;
+    function bindQuickRepliesBar() {
+        const qrBar = document.querySelector('#qr--bar');
+        if (!qrBar) return false;
+        qrBarResizeObserver?.disconnect();
+        qrBarResizeObserver = new ResizeObserver(() => {
+            positionTriggerBesideQuickReplies();
+            ensurePanelsVisible();
+        });
+        qrBarResizeObserver.observe(qrBar);
+        positionTriggerBesideQuickReplies();
+        return true;
+    }
+
+    if (!bindQuickRepliesBar()) {
+        const qrBarMutationObserver = new MutationObserver(() => {
+            if (bindQuickRepliesBar()) qrBarMutationObserver.disconnect();
+        });
+        qrBarMutationObserver.observe(document.body, { childList: true, subtree: true });
     }
 
     // Feature-detect CSS Anchor Positioning
@@ -305,108 +290,13 @@ const init = ()=>{
         ensure(configPanel);
     }
 
-    function materializeDefaultPosition() {
-        // Convert current visual placement (bottom/left CSS) to top/left pixels
-        const rect = trigger.getBoundingClientRect();
-        const left = rect.left;
-        const top = rect.top;
-        trigger.style.left = left + 'px';
-        trigger.style.top = top + 'px';
-        trigger.style.right = 'auto';
-        trigger.style.bottom = 'auto';
-        if (!extension_settings.worldInfoInfo) extension_settings.worldInfoInfo = {};
-        extension_settings.worldInfoInfo.triggerPos = { left, top };
-    }
-
-    let dragging = false;
-    let dragStartX = 0, dragStartY = 0;
-    let baseLeft = 0, baseTop = 0;
-    let movedEnough = false;
-    let suppressNextClick = false;
-
-    function onPointerDown(e) {
-        if (!(extension_settings.worldInfoInfo?.drag)) return; // dragging disabled
-        if (e.button !== 0 && e.pointerType !== 'touch') return; // left mouse or touch
-        dragging = true;
-        movedEnough = false;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-
-        // compute current position
-        const rect = trigger.getBoundingClientRect();
-        baseLeft = rect.left;
-        baseTop = rect.top;
-
-        trigger.style.touchAction = 'none';
-        trigger.setPointerCapture?.(e.pointerId);
-        e.preventDefault();
-    }
-
-    function onPointerMove(e) {
-        if (!dragging) return;
-        const dx = e.clientX - dragStartX;
-        const dy = e.clientY - dragStartY;
-        if (!movedEnough && (Math.abs(dx) > 4 || Math.abs(dy) > 4)) movedEnough = true;
-
-        const newLeft = clamp(baseLeft + dx, 0, window.innerWidth - trigger.offsetWidth);
-        const newTop = clamp(baseTop + dy, 0, window.innerHeight - trigger.offsetHeight);
-
-        // switch to top/left based positioning
-        trigger.style.left = newLeft + 'px';
-        trigger.style.top = newTop + 'px';
-        trigger.style.right = 'auto';
-        trigger.style.bottom = 'auto';
-    }
-
-    function endDrag(e) {
-        if (!dragging) return;
-        dragging = false;
-        trigger.releasePointerCapture?.(e.pointerId);
-        trigger.style.touchAction = '';
-
-        // persist if moved
-        if (movedEnough) {
-            const rect = trigger.getBoundingClientRect();
-            if (!extension_settings.worldInfoInfo) extension_settings.worldInfoInfo = {};
-            extension_settings.worldInfoInfo.triggerPos = { left: rect.left, top: rect.top };
-            saveSettingsDebounced();
-            suppressNextClick = true;
-            setTimeout(() => suppressNextClick = false, 250);
-        }
-
-        // Re-place open panels after drag
-        requestAnimationFrame(ensurePanelsVisible);
-    }
-
-    trigger.addEventListener('pointerdown', onPointerDown);
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', endDrag);
-    window.addEventListener('pointercancel', endDrag);
-
-    // Prevent click toggle if a drag just occurred (capture phase)
-    trigger.addEventListener('click', (e) => {
-        if (suppressNextClick) {
-            e.stopImmediatePropagation();
-            e.preventDefault();
-        }
-    }, true);
-
-    // Ensure the saved position stays visible on resize
     window.addEventListener('resize', () => {
-        const pos = extension_settings.worldInfoInfo?.triggerPos;
-        if (pos) {
-            const clampedLeft = clamp(pos.left, 0, window.innerWidth - trigger.offsetWidth);
-            const clampedTop = clamp(pos.top, 0, window.innerHeight - trigger.offsetHeight);
-            if (clampedLeft !== pos.left || clampedTop !== pos.top) {
-                pos.left = clampedLeft;
-                pos.top = clampedTop;
-                trigger.style.left = clampedLeft + 'px';
-                trigger.style.top = clampedTop + 'px';
-                saveSettingsDebounced();
-            }
-        }
+        positionTriggerBesideQuickReplies();
+        ensurePanelsVisible();
+    });
 
-        // After trigger potentially moved, place visible panels
+    window.visualViewport?.addEventListener('resize', () => {
+        positionTriggerBesideQuickReplies();
         ensurePanelsVisible();
     });
 
@@ -1210,16 +1100,6 @@ window.STWII.destroy = function() {
         },
         returns: 'list of triggered WI entries',
         helpString: 'Get the list of World Info entries triggered on the last generation.',
-    }));
-
-    SlashCommandParser.addCommandObject(SlashCommand.fromProps({
-        name: 'wi-position-reset',
-        callback: () => {
-            resetWiTriggerPosition();
-            return 'Reset WI icon position.';
-        },
-        returns: 'resets WI icon position',
-        helpString: 'Reset the World Info Info book icon position (same as clicking "Reset position"). Usage: /wi-position-reset',
     }));
 
     // Generate a keyword frequency report from captured activation events (popup with declared options)
