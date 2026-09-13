@@ -7,7 +7,7 @@
   width: 32px;
   height: 32px;
   border: none;
-  font-size: 19px;
+  font-size: 18px;
   opacity: 0.7;
   transition: opacity var(--animation-duration-2x);
   cursor: pointer;
@@ -55,7 +55,9 @@
 }
 
 .stwii--panel {
-  filter: drop-shadow(1px 1px 2px var(--black50a));
+  border: 1px solid var(--SmartThemeBorderColor);
+  filter: none;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
   z-index: 30000;
   overflow: auto;
   border-radius: 10px;
@@ -206,7 +208,7 @@
     top: anchor(center);
     right: auto;
     bottom: auto;
-    transform: translate(8px, -36%);
+    transform: translate(8px, -35%);
   }
   .stwii--panel {
     position-anchor: --stac--wiAnchor;
