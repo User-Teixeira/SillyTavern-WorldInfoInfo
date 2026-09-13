@@ -9,17 +9,17 @@
     top: anchor(center);
     right: auto;
     bottom: auto;
-    transform: translateY(-50%);
+    transform: translate(8px, -36%);
     padding: 0;
     margin: 0;
     width: 32px;
     height: 32px;
     border: none;
-    font-size: 20px;
+    font-size: 19px;
     opacity: 0.7;
     transition: opacity var(--animation-duration-2x);
     cursor: pointer;
-    z-index: 3010;
+    z-index: 999;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -37,19 +37,20 @@
             position: absolute;
             bottom: 0;
             right: 0;
-            font-size: calc(0.65 * var(--mainFontSize));
+            font-size: 9px;
             font-weight: bold;
             font-family: var(--mainFontFamily);
             color: white;
-            background: black;
+            background-color: var(--SmartThemeBlurTintColor);
             line-height: 1;
-            padding: 0.25em;
+            padding: 0.5px;
             border-radius: 50%;
             aspect-ratio: 1 / 1;
             height: 1lh;
             text-align: center;
             pointer-events: none;
             transition: 200ms;
+            translate: -4px -4px;
         }
         &.stwii--badge-in::after {
             animation: stwii--badge-popin 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);

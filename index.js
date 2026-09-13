@@ -65,7 +65,7 @@ const init = ()=>{
     } catch {}
     const trigger = document.createElement('div'); {
         trigger.classList.add('stwii--trigger');
-        trigger.classList.add('fa-solid', 'fa-fw', 'fa-book-atlas');
+        trigger.classList.add('fa-solid', 'fa-fw', 'fa-book-bookmark');
         trigger.title = 'Active WI\n---\nright click for options';
         trigger.addEventListener('click', ()=>{
             configPanel.classList.remove('stwii--isActive');
