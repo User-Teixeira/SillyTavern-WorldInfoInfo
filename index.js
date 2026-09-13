@@ -166,49 +166,9 @@ const init = ()=>{
         configPanel.classList.remove('stwii--isActive');
     });
 
-    // Positioning helpers
+    // Panel positioning helper
     function clamp(val, min, max) {
         return Math.max(min, Math.min(max, val));
-    }
-
-    // Keep the trigger immediately to the left of the Quick Replies bar.
-    function positionTriggerBesideQuickReplies() {
-        const qrBar = document.querySelector('#qr--bar');
-        if (!qrBar) return false;
-
-        const qrRect = qrBar.getBoundingClientRect();
-        if (qrRect.width === 0 && qrRect.height === 0) return false;
-
-        const gap = 4;
-        const left = clamp(qrRect.left - trigger.offsetWidth - gap, 0, window.innerWidth - trigger.offsetWidth);
-        const top = clamp(qrRect.top + ((qrRect.height - trigger.offsetHeight) / 2), 0, window.innerHeight - trigger.offsetHeight);
-
-        trigger.style.left = left + 'px';
-        trigger.style.top = top + 'px';
-        trigger.style.right = 'auto';
-        trigger.style.bottom = 'auto';
-        return true;
-    }
-
-    let qrBarResizeObserver;
-    function bindQuickRepliesBar() {
-        const qrBar = document.querySelector('#qr--bar');
-        if (!qrBar) return false;
-        qrBarResizeObserver?.disconnect();
-        qrBarResizeObserver = new ResizeObserver(() => {
-            positionTriggerBesideQuickReplies();
-            ensurePanelsVisible();
-        });
-        qrBarResizeObserver.observe(qrBar);
-        positionTriggerBesideQuickReplies();
-        return true;
-    }
-
-    if (!bindQuickRepliesBar()) {
-        const qrBarMutationObserver = new MutationObserver(() => {
-            if (bindQuickRepliesBar()) qrBarMutationObserver.disconnect();
-        });
-        qrBarMutationObserver.observe(document.body, { childList: true, subtree: true });
     }
 
     // Feature-detect CSS Anchor Positioning
@@ -291,12 +251,10 @@ const init = ()=>{
     }
 
     window.addEventListener('resize', () => {
-        positionTriggerBesideQuickReplies();
         ensurePanelsVisible();
     });
 
     window.visualViewport?.addEventListener('resize', () => {
-        positionTriggerBesideQuickReplies();
         ensurePanelsVisible();
     });
 

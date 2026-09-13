@@ -7,7 +7,7 @@ Click the book beside the Quick Replies bar to see the list of active entries.
 
 ![list of entries](https://github.com/aikohanasaki/imagehost/blob/main/wii-list.png)
 
-The book icon stays aligned to the left side of the Quick Replies bar. Click anywhere outside its panel to close it.
+The book icon stays aligned inside the left side of the Quick Replies bar. Click anywhere outside its panel to close it.
 
 🆕 `/wi-report` shows you what keywords triggered which entry during which round of recursion.
 
